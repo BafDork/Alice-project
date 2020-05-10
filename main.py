@@ -1,15 +1,14 @@
-from additional_content import abilities, get_suggests, get_logger
+from additional_content import abilities, get_suggests, get_logger, users_bots
 from telegram_bot.class_telegram_bot import Telegram_Bot
 from vk_bot.class_vk_bot import Vk_Bot
 from flask_ngrok import run_with_ngrok
 from flask import Flask, request
-import json, os
+import json, re
 
 
 app = Flask(__name__)
 run_with_ngrok(app)
-sessionStorage = {}
-logger = get_logger('alice_logger', 'logfile.log')
+sessionStorage, logger = {}, get_logger('alice_logger', 'logfile.log')
 
 
 @app.route('/post', methods=['POST'])
@@ -24,106 +23,129 @@ def main():
 
 
 def handle_dialog(req, res):
-	user_message =  req['request']['original_utterance'].lower()
-	user_id = req['session']['user_id']
+	user_message, user_id =  req['request']['original_utterance'].lower(), req['session']['user_id']
 	if req['session']['new']:
 		sessionStorage[user_id] = {'vk_bot': {'bot': Vk_Bot(get_logger('vk_bot_logger', 'vk_bot/logfile.log'), req, res)},
 								   'telegram_bot': {'bot': Telegram_Bot(get_logger('telegram_bot_logger', 'telegram_bot/logfile.log'), req, res)}}
-		sessionStorage[user_id]['vk_bot']['bot'].check_saved_bot([os.path.join('top_secret', 'users_bots.txt'), 'r'])
-		sessionStorage[user_id]['telegram_bot']['bot'].check_saved_bot([os.path.join('top_secret', 'users_bots.txt'), 'r'])
+		sessionStorage[user_id]['vk_bot']['bot'].check_saved_bot(users_bots, 'r')
+		sessionStorage[user_id]['telegram_bot']['bot'].check_saved_bot(users_bots, 'r')
 		if not sessionStorage[user_id]['vk_bot']['bot'].bot and not sessionStorage[user_id]['telegram_bot']['bot'].bot:
-			res['response']['text'] = ('Привет, с моей помощью вы сможешь управлять своими ботами.\n' +
+			res['response']['text'] = ('Привет, с моей помощью вы сможешь управлять своими ботами.\n'
 									   'Чтобы узнать мои возможности напишите: "Что ты умеешь"')
+			res['response']['buttons'] = get_suggests('new_user')
 		return
-	sessionStorage[user_id]['vk_bot']['bot'].update_arg(req, res)
-	sessionStorage[user_id]['telegram_bot']['bot'].update_arg(req, res)
+	vk_bot, telegram_bot = sessionStorage[user_id]['vk_bot']['bot'], sessionStorage[user_id]['telegram_bot']['bot']
+	vk_bot.update_arg(req, res)
+	telegram_bot.update_arg(req, res)
 	if user_message == 'что ты умеешь':
 		res['response']['text'] = '\n'.join(abilities)
 
 	elif user_message == 'отменить добавление':
-		if sessionStorage[user_id]['vk_bot']['bot'].add_flag or sessionStorage[user_id]['telegram_bot']['bot'].add_flag:
-			sessionStorage[user_id]['vk_bot']['bot'].add_flag, sessionStorage[user_id]['telegram_bot']['bot'].add_flag = False, False
+		if vk_bot.add_flag or telegram_bot.add_flag:
+			vk_bot.add_flag, telegram_bot.add_flag = False, False
 			res['response']['text'] = 'Выполнено.'
 		else:
 			res['response']['text'] = 'Вы не добавляете бота.'
 
-	elif any(f'добавь бота {key}' == user_message for key in ['вк', 'телеграмм']):
-		if 'вк' in user_message and not sessionStorage[user_id]['vk_bot']['bot'].bot:
-			sessionStorage[user_id]['vk_bot']['bot'].add_flag = True
+	elif re.search(r'добавь бота (вк|телеграмм)', user_message):
+		if 'вк' in user_message and not vk_bot.bot:
+			vk_bot.add_flag = True
 			res['response']['text'] = 'Введите token бота и id группы: "token={}; group_id={}"'
-		elif 'телеграмм' in user_message and not sessionStorage[user_id]['telegram_bot']['bot'].bot:
-			sessionStorage[user_id]['telegram_bot']['bot'].add_flag = True
+		elif 'телеграмм' in user_message and not telegram_bot.bot:
+			telegram_bot.add_flag = True
 			res['response']['text'] = 'Введите token бота: "token={}"'
 		else:
 			res['response']['text'] = 'У вас уже добавлен бот.'
 
-	elif sessionStorage[user_id]['vk_bot']['bot'].add_flag or sessionStorage[user_id]['telegram_bot']['bot'].add_flag:
-		if sessionStorage[user_id]['vk_bot']['bot'].add_flag:
-			sessionStorage[user_id]['vk_bot']['bot'].add_bot()
-		elif sessionStorage[user_id]['telegram_bot']['bot'].add_flag:
-			sessionStorage[user_id]['telegram_bot']['bot'].add_bot()
+	elif vk_bot.add_flag or telegram_bot.add_flag:
+		if vk_bot.add_flag:
+			vk_bot.add_bot()
+			res['response']['buttons'] = get_suggests('завершение добавления бота вк')
+		elif telegram_bot.add_flag:
+			telegram_bot.add_bot()
+			res['response']['buttons'] = get_suggests('завершение добавления бота телеграмм')
 
-	elif any(f'измени бота {key}' == user_message for key in ['вк', 'телеграмм']):
+	elif re.search(r'измени бота (вк|телеграмм)', user_message):
 		if 'вк' in user_message:
-			sessionStorage[user_id]['vk_bot']['bot'].delete_bot([os.path.join('top_secret', 'users_bots.txt'), 'r'])
-			sessionStorage[user_id]['vk_bot']['bot'].bot, sessionStorage[user_id]['vk_bot']['bot'].add_flag = None, True
+			vk_bot.delete_bot(users_bots, 'r')
+			vk_bot.bot, vk_bot.add_flag = None, True
 			if res['response']['text'] == 'Выполнено.':
 				res['response']['text'] = 'Ваше сохранение было удалено.'
 			res['response']['text'] += ' Введите token бота и id группы: "token={}; group_id={}"'
 		elif 'телеграмм' in user_message:
-			sessionStorage[user_id]['telegram_bot']['bot'].delete_bot([os.path.join('top_secret', 'users_bots.txt'), 'r'])
-			sessionStorage[user_id]['telegram_bot']['bot'].bot, sessionStorage[user_id]['telegram_bot']['bot'].add_flag = None, True
+			telegram_bot.delete_bot(users_bots, 'r')
+			telegram_bot.bot, telegram_bot.add_flag = None, True
 			if res['response']['text'] == 'Выполнено.':
 				res['response']['text'] = 'Ваше сохранение было удалено.'
 			res['response']['text'] += ' Введите token бота: "token={}"'
 
-	elif any(f'запомни бота {key}' == user_message for key in ['вк', 'телеграмм']):
-		if 'вк' in user_message and not sessionStorage[user_id]['vk_bot']['bot'].save_flag:
-			sessionStorage[user_id]['vk_bot']['bot'].save_bot([os.path.join('top_secret', 'users_bots.txt'), 'a+'])
-		elif 'телеграмм' in user_message and not sessionStorage[user_id]['telegram_bot']['bot'].save_flag:
-			sessionStorage[user_id]['telegram_bot']['bot'].save_bot([os.path.join('top_secret', 'users_bots.txt'), 'a+'])
+	elif re.search(r'запомни бота (вк|телеграмм)', user_message):
+		if 'вк' in user_message and not vk_bot.save_flag:
+			vk_bot.save_bot(users_bots, 'a+')
+		elif 'телеграмм' in user_message and not telegram_bot.save_flag:
+			telegram_bot.save_bot(users_bots, 'a+')
 		else:
 			res['response']['text'] = 'Ваш бот уже был сохранен.'
 
-	elif any(f'забудь бота {key}' == user_message for key in ['вк', 'телеграмм']):
-		if 'вк' in user_message and sessionStorage[user_id]['vk_bot']['bot'].save_flag:
-			sessionStorage[user_id]['vk_bot']['bot'].delete_bot([os.path.join('top_secret', 'users_bots.txt'), 'r'])
-		elif 'телеграмм' in user_message and sessionStorage[user_id]['telegram_bot']['bot'].save_flag:
-			sessionStorage[user_id]['telegram_bot']['bot'].delete_bot([os.path.join('top_secret', 'users_bots.txt'), 'r'])
+	elif re.search(r'забудь бота (вк|телеграмм)', user_message):
+		if 'вк' in user_message and vk_bot.save_flag:
+			vk_bot.delete_bot(users_bots, 'r')
+		elif 'телеграмм' in user_message and telegram_bot.save_flag:
+			telegram_bot.delete_bot(users_bots, 'r')
 		else:
 			res['response']['text'] = 'Ваш бот не был сохранен.'
 
-	elif any(f'запусти бота {key}' == user_message for key in ['вк', 'телеграмм']):	
+	elif re.search(r'запусти бота (вк|телеграмм)', user_message):
 		if 'вк' in user_message:
-			sessionStorage[user_id]['vk_bot']['bot'].start_bot()
+			vk_bot.start_bot()
 		elif 'телеграмм' in user_message:
-			sessionStorage[user_id]['telegram_bot']['bot'].start_bot()
+			telegram_bot.start_bot()
 
-	elif any(f'останови бота {key}' == user_message for key in ['вк', 'телеграмм']):
+	elif re.search(r'останови бота (вк|телеграмм)', user_message):
 		if 'вк' in user_message:
-			sessionStorage[user_id]['vk_bot']['bot'].stop_bot()
+			vk_bot.stop_bot()
 		elif 'телеграмм' in user_message:
-			sessionStorage[user_id]['telegram_bot']['bot'].stop_bot()
+			telegram_bot.stop_bot()
 
-	elif any(f'проверь новые сообщения в {key}' == user_message for key in ['вк', 'телеграмм']):
+	elif re.search(r'активируй автоответ бота (вк|телеграмм)', user_message):
 		if 'вк' in user_message:
-			sessionStorage[user_id]['vk_bot']['bot'].check_new_messages()
+			vk_bot.enable_auto_answer()
 		elif 'телеграмм' in user_message:
-			sessionStorage[user_id]['telegram_bot']['bot'].check_new_messages()
+			telegram_bot.enable_auto_answer()
 
-	elif any(f'ответь всем в {key}' == user_message.split(':')[0] for key in ['вк', 'телеграмм']):
+	elif re.search(r'отключи автоответ бота (вк|телеграмм)', user_message):
 		if 'вк' in user_message:
-			sessionStorage[user_id]['vk_bot']['bot'].answer_messages()
+			vk_bot.disable_auto_answer()
 		elif 'телеграмм' in user_message:
-			sessionStorage[user_id]['telegram_bot']['bot'].answer_messages()
-	elif any(f'напиши всем в {key}' == user_message.split(':')[0] for key in ['вк', 'телеграмм']):
+			telegram_bot.disable_auto_answer()
+
+	elif re.search(r'проверь новые сообщения в (вк|телеграмм)', user_message):
 		if 'вк' in user_message:
-			sessionStorage[user_id]['vk_bot']['bot'].write_all_users([os.path.join('top_secret', 'vk_users.txt'), 'r'])
+			vk_bot.check_new_messages()
 		elif 'телеграмм' in user_message:
-			sessionStorage[user_id]['telegram_bot']['bot'].write_all_users([os.path.join('top_secret', 'telegram_users.txt'), 'r'])
+			telegram_bot.check_new_messages()
+
+	elif re.search(r'ответь всем в (вк|телеграмм):', user_message):
+		if 'вк' in user_message:
+			vk_bot.answer_messages()
+		elif 'телеграмм' in user_message:
+			telegram_bot.answer_messages()
+
+	elif re.search(r'напиши всем в (вк|телеграмм):', user_message):
+		if 'вк' in user_message:
+			vk_bot.write_all_users()
+		elif 'телеграмм' in user_message:
+			telegram_bot.write_all_users()
+
+	elif re.search(r'запланируй через \d+ мин (написать)|(ответить) всем в (вк|телеграмм):', user_message):
+		if 'вк' in user_message:
+			vk_bot.planned_mailing_list('vk')
+		elif 'телеграмм' in user_message:
+			telegram_bot.planned_mailing_list('telegram')
 
 	else:
 		res['response']['text'] = 'Извините я такого не умею.'
+
 	res['response']['buttons'] = get_suggests(user_message)
 
 
