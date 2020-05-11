@@ -38,7 +38,7 @@ class Vk_Bot(Bot_Father):
 				elif event.type == VkBotEventType.MESSAGE_NEW:
 					self.logger.info(f'Get; message: {event}')
 					super().add_user_info(vk_users, 'w', event.obj.message['from_id'], event.obj.message['text'])
-					if self.self.auto_answer:
+					if self.auto_answer:
 						self.network.messages.send(user_id=event.obj.message['from_id'],
 												   message=f'{self.network.users.get(user_id=event.obj.message["from_id"])[0]["first_name"]}, мы вам скоро ответим.',
 												   random_id=random.randint(0, 2 ** 64))
