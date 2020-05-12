@@ -140,8 +140,10 @@ class Bot_Father():
 	@func_implementer
 	def planned_mailing_list(self, bot):
 		timer = re.search(r'\d+', r'{}'.format(self.user_message))
+		self.logger.info(timer)
 		if 'написать всем' in self.user_message:
 			self.plain[bot]['write'] = self.user_message.split(':')[1]
+			self.logger.info(timer)
 			self.thread_plain = threading.Timer(int(timer[0]) * 60, self.write_all_users)
 		elif 'ответить всем' in self.user_message:
 			self.plain[bot]['answer'] = self.user_message.split(':')[1]

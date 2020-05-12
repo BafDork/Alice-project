@@ -64,9 +64,10 @@ class Telegram_Bot(Bot_Father):
 	def write_all_users(self):
 		with open(telegram_users, 'r') as file:
 			users = file.readlines()
-		text = self.user_message.split(':')[1]
 		if self.thread_plain == threading.currentThread():
 			text = self.plain['telegram']['write']
+		else:
+			text = self.user_message.split(':')[1]
 		for line in users:
 			if self.user_id in line:
 				for user_id in line[:-1].split(':')[1].split(','):
