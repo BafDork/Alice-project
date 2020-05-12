@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <link href="css\impress-common.css" rel="stylesheet" />
+    <link href="css/3D-rotations.css" rel="stylesheet" />
+</head>
+
+<body class="impress-not-supported">
+<div class="fallback-message">
+    <p>Your browser <b>doesn't support the features required</b> by impress.js, so you are presented with a simplified version of this presentation.</p>
+    <p>For the best experience please use the latest <b>Chrome</b>, <b>Safari</b> or <b>Firefox</b> browser.</p>
+</div>
+
+<div id="impress" data-transition-duration="2000">
+
+
+    <div id="overview" class="step overview" data-x="1350" data-y="100" data-z="100" data-scale="3" data-rotate-y="90">
+    </div>
+    <div id="overview2" class="step overview" data-x="2018" data-y="106" data-z="3018" data-scale="2">
+      <embed src="static\mem.mp3" hidden="True" autostart="True" loop="False">
+      <h1>Итоговый проект</h1>
+      <h2>Навык для рассылки</h2>
+      <h4 style="margin-top: 3em">Тема: навык для Алисы</h4>
+      <h4>Выполнил: Евгений Чернов</h4>
+    </div>
+
+    <div id="step-1" class="step" data-x="0" data-y="0" data-z="0"
+         data-goto-prev="step-3">
+      <h2 style="font-size: 30pt">Основная идея</h2>
+      <h5 style="text-align: center; margin-top: -0.2em; font-size: 20pt">удобная рассылка сообщений в соц сетях</h5>
+      <div style="margin-top: 1.5em;  margin-top: 4em">
+        <h3 style="font-size: 25pt">Главные возможности навыка:</h3>
+         <div style="font-size: 20pt; margin-left: 1em; line-height: 1">
+           <p>1. Подключение к боту вк или телеграмм</p>
+           <p>2. Проверка новых сообщений</p>
+           <p>3. Рассылка сообщений пользователям</p>
+         </div>
+      </div>
+    </div>
+    <div id="step-2" class="step" data-x="422" data-y="780" data-z="-250" data-rotate-z="135" data-rotate-y="-135" data-rotate-order="zyx">
+      <h3 style="font-size: 26pt">Структура</h3>
+      <div style="margin-left: 1.5em; font-size: 20pt">
+        <p>Родительский класс: Bot_Father</p>
+        <p>Дочерние классы:</p>
+      </div>          
+      <div style="margin-left: 13.8em; margin-top: -3em; line-height: 1; font-size: 17.5pt">
+        <p>Vk_Bot</p>
+        <p>Telegram_Bot</p>
+      </div>
+        <h3 style="font-size: 25pt; margin-top: 3em">Особенности приложения</h3>
+        <div style="margin-left: 1em; font-size: 20pt">
+          <p>1. Параллельная работа навыка и ботов</p>
+          <p>2. Сохранение данных пользлвателей</p>
+        </div>
+      </div>
+    <div id="step-3" class="step" data-x="379" data-y="-70" data-z="270" data-rotate-z="45" data-rotate-y="-315" data-rotate-order="zyx">
+      <h2 style="font-size: 30pt">Возможности для доработки</h2>
+      <div style="margin-left: 1em; font-size: 20pt">
+        <p>1. Создание базы данных</p>
+        <p>2. Добавление дискорд бота</p>
+      </div>
+      <h2 style="font-size: 30pt; margin-top: 3em">Выводы по работе с навыком</h2>
+      <div style="margin-left: 1em; font-size: 20pt">
+        <p>1. Очень неудобное тестирование</p>
+        <p>2. Легче примкнуть к сатане, чем правильно закрыть поток</p>
+      </div>
+    </div>
+    <div id="step-4" class="step" data-x="700" data-y="350" data-z="-350" data-rotate-z="90" data-rotate-y="-90" data-rotate-order="zyx"
+    data-goto-next="step-1">
+      <div style="margin-left: -1.8em; margin-top: -1.2em; background: #000; width: 700px; height: 700px; border-radius: 10px">
+        <canvas></canvas>
+      </div>
+    </div>
+</div>
+
+<div id="impress-toolbar"></div>
+<div id="impress-help"></div>
+
+<script src="js/script.js"></script>
+<script type="text/javascript" src="js/impress.js"></script>
+<script>impress().init();</script>
+
+</body>
+</html>
